@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, Alert, Platform } from 'react-native';
 import { theme } from './colors';
 import { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -39,29 +39,35 @@ export default function App() {
   }
 
   const loadToDos = async () => {
-    try {
-      const value = await AsyncStorage.getItem(STORAGE_KEY);
+    const value = await AsyncStorage.getItem(STORAGE_KEY);
+    if (value)
       setToDos(JSON.parse(value));
-    }
-    catch (e) {
-      console.error("error");
-    }
   }
 
   const deleteToDo = (key) => {
-    Alert.alert("정말로 삭제하시겠습니까?", null, [
-      { text: "취소" },
-      {
-        text: "삭제",
-        style: "destructive",
-        onPress: async () => {
-          const newToDos = { ...toDos };
-          delete newToDos[key];
-          setToDos(newToDos);
-          await saveToDos(newToDos);
-        }
+    if (Platform.OS === "web") {
+      const ok = confirm("정말로 삭제하시겠습니까?");
+      if (ok) {
+        const newToDos = { ...toDos };
+        delete newToDos[key];
+        setToDos(newToDos);
+        saveToDos(newToDos);
       }
-    ]);
+    } else {
+      Alert.alert("정말로 삭제하시겠습니까?", null, [
+        { text: "취소" },
+        {
+          text: "삭제",
+          style: "destructive",
+          onPress: async () => {
+            const newToDos = { ...toDos };
+            delete newToDos[key];
+            setToDos(newToDos);
+            await saveToDos(newToDos);
+          }
+        }
+      ]);
+    }
   }
 
   useEffect(() => {
